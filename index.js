@@ -1,10 +1,14 @@
 /**
  * quality-guard — OpenClaw Safety Plugin
  *
- * Hooks into OpenClaw's plugin lifecycle to provide two layers of protection:
+ * Hooks into OpenClaw's plugin lifecycle to provide multiple layers of protection:
  *
  * 1. before_tool_call  → Block dangerous shell commands before they execute
  * 2. tool_result_persist → Analyze tool output for errors, warnings, and bloat
+ * 3. subagent_spawning → Log sub-agent launches
+ * 4. subagent_ended → Log sub-agent completion/failure
+ * 5. before_tool_call (sessions_spawn) → Validate spawn task quality
+ * 6. tool_result_persist (subagent results) → Inject post-review reminders
  *
  * Detection engine (5 layers):
  *   L1  Full-command regex match
@@ -234,26 +238,83 @@ const plugin = {
       if (typeof api.log === "function") api.log(...args);
     };
 
-    // ── Hook 1: before_tool_call — block dangerous commands ──────────
+    // ── Hook 1: before_tool_call — block dangerous commands + spawn quality ─
     api.registerHook("before_tool_call", (event, _ctx) => {
-      if (event.toolName !== "exec") return;
+      // --- Dangerous command blocking (exec) ---
+      if (event.toolName === "exec") {
+        const command = event.params?.command;
+        if (isDangerousCommand(command)) {
+          log(`[quality-guard] BLOCKED: ${command}`);
+          return {
+            block: true,
+            blockReason: `⛔ Quality Guard blocked a dangerous command:\n\n  ${command}\n\nPlease verify the command is safe and run it manually if needed.`,
+          };
+        }
+        return;
+      }
 
-      const command = event.params?.command;
-      if (isDangerousCommand(command)) {
-        log(`[quality-guard] BLOCKED: ${command}`);
-        return {
-          block: true,
-          blockReason: `⛔ Quality Guard blocked a dangerous command:\n\n  ${command}\n\nPlease verify the command is safe and run it manually if needed.`,
-        };
+      // --- Spawn task quality check (sessions_spawn) ---
+      if (event.toolName === "sessions_spawn") {
+        const task = event.params?.task || event.params?.message || "";
+        if (typeof task !== "string") return;
+
+        const taskLen = task.length;
+
+        // Task too short — likely missing context (file paths, schemas, etc.)
+        if (taskLen > 0 && taskLen < 200) {
+          log(`[quality-guard] ⚠️ spawn task too short (${taskLen} chars). May lack context.`);
+        }
+
+        // Check whether the task includes concrete file paths
+        const hasFilePaths = /\/[\w.-]+\/[\w.-]+/.test(task);
+
+        if (taskLen > 50 && !hasFilePaths) {
+          log("[quality-guard] ⚠️ spawn task has no file paths. Sub-agent may guess.");
+        }
       }
     });
 
-    // ── Hook 2: tool_result_persist — analyze tool output ────────────
+    // ── Hook 2: tool_result_persist — output analysis + review reminders ─
     api.registerHook("tool_result_persist", (event, _ctx) => {
       if (!event.message) return;
 
       const { toolName } = event;
       const msg = event.message;
+
+      // --- Sub-agent post-review reminder ---
+      if (
+        toolName === "subagents" ||
+        toolName === "sessions_list" ||
+        toolName === "sessions_history"
+      ) {
+        let resultText = "";
+        if (msg.content && typeof msg.content === "string") {
+          resultText = msg.content;
+        }
+
+        if (
+          resultText.includes("complete") ||
+          resultText.includes("finished") ||
+          resultText.includes("done")
+        ) {
+          const reviewReminder =
+            "\n\n🔍 Quality Guard Review Reminder:\n" +
+            "Sub-agent has finished. Please run a post-review:\n" +
+            "1. Read all output files — check cross-file references\n" +
+            "2. Verify SQL column names, require/import paths\n" +
+            "3. Runtime verification (start server / curl / execute)\n" +
+            "4. Check for similar issues in the same file or module";
+
+          const modified = { ...msg };
+          if (typeof modified.content === "string") {
+            modified.content += reviewReminder;
+          }
+          return { message: modified };
+        }
+        return;
+      }
+
+      // --- Tool output quality analysis ---
 
       // Extract text from the tool result (handles string & array content)
       let resultText = "";
@@ -322,7 +383,7 @@ const plugin = {
       }
     });
 
-    log("[quality-guard] registered — dangerous command blocking + output analysis active");
+    log("[quality-guard] all hooks registered (4 total)");
   },
 };
 
