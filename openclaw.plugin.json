@@ -1,0 +1,29 @@
+{
+  "id": "quality-guard",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "maxFileLines": {
+        "type": "number",
+        "default": 400,
+        "description": "Warn when a written file exceeds this many lines"
+      },
+      "maxExecOutputLines": {
+        "type": "number",
+        "default": 100,
+        "description": "Warn when exec output exceeds this many lines"
+      },
+      "detectErrors": {
+        "type": "boolean",
+        "default": true,
+        "description": "Auto-detect ERROR/WARN patterns in exec output"
+      },
+      "blockDangerousCommands": {
+        "type": "boolean",
+        "default": true,
+        "description": "Block dangerous commands (rm -rf /, DROP TABLE, git push --force, etc.)"
+      }
+    }
+  }
+}

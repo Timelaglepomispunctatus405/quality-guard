@@ -1,0 +1,37 @@
+{
+  "name": "quality-guard",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin — dangerous command blocking + tool output quality analysis for AI agents",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index.test.js"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "ai-safety",
+    "ai-agent",
+    "command-guard",
+    "dangerous-command",
+    "shell-safety",
+    "code-quality",
+    "tool-output",
+    "llm-safety",
+    "agent-safety",
+    "rm-protection",
+    "sql-injection",
+    "git-force-push",
+    "destructive-command"
+  ],
+  "author": "OpenClaw Community",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abczsl520/quality-guard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abczsl520/quality-guard/issues"
+  },
+  "homepage": "https://github.com/abczsl520/quality-guard#readme"
+}
