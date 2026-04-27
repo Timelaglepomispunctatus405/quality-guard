@@ -1,6 +1,6 @@
 {
   "name": "quality-guard",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "OpenClaw plugin — dangerous command blocking + tool output quality analysis for AI agents",
   "type": "module",
   "main": "index.js",

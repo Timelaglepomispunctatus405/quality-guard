@@ -238,10 +238,17 @@ const plugin = {
       if (typeof api.log === "function") api.log(...args);
     };
 
+    // Read user config (falls back to defaults from openclaw.plugin.json)
+    const cfg = api.pluginConfig || {};
+    const maxExecOutputLines = cfg.maxExecOutputLines ?? 100;
+    const maxFileLines = cfg.maxFileLines ?? 400;
+    const detectErrors = cfg.detectErrors !== false;
+    const blockDangerousCommands = cfg.blockDangerousCommands !== false;
+
     // ── Hook 1: before_tool_call — block dangerous commands + spawn quality ─
     api.registerHook("before_tool_call", (event, _ctx) => {
       // --- Dangerous command blocking (exec) ---
-      if (event.toolName === "exec") {
+      if (event.toolName === "exec" && blockDangerousCommands) {
         const command = event.params?.command;
         if (isDangerousCommand(command)) {
           log(`[quality-guard] BLOCKED: ${command}`);
@@ -345,16 +352,18 @@ const plugin = {
       // — exec output analysis —
       if (toolName === "exec") {
         const lineCount = resultText.split("\n").length;
-        if (lineCount > 100) {
+        if (lineCount > maxExecOutputLines) {
           warnings.push(
-            `📏 Output is ${lineCount} lines (>100). Consider using grep/head/tail to extract key info.`,
+            `📏 Output is ${lineCount} lines (>${maxExecOutputLines}). Consider using grep/head/tail to extract key info.`,
           );
         }
 
-        const errorCount = countPatterns(resultText, ERROR_PATTERNS);
-        const warnCount = countPatterns(resultText, WARN_PATTERNS);
-        if (errorCount > 0) warnings.push(`🔴 Detected ${errorCount} ERROR(s) in output`);
-        if (warnCount > 0) warnings.push(`🟡 Detected ${warnCount} WARNING(s) in output`);
+        if (detectErrors) {
+          const errorCount = countPatterns(resultText, ERROR_PATTERNS);
+          const warnCount = countPatterns(resultText, WARN_PATTERNS);
+          if (errorCount > 0) warnings.push(`🔴 Detected ${errorCount} ERROR(s) in output`);
+          if (warnCount > 0) warnings.push(`🟡 Detected ${warnCount} WARNING(s) in output`);
+        }
       }
 
       // — write/edit file-size analysis —
@@ -362,9 +371,9 @@ const plugin = {
         const lineMatch = resultText.match(/(\d+)\s*(?:lines?|行)/i);
         if (lineMatch) {
           const fileLines = parseInt(lineMatch[1], 10);
-          if (fileLines > 400) {
+          if (fileLines > maxFileLines) {
             warnings.push(
-              `📐 File is ${fileLines} lines (>400). Consider splitting into smaller modules.`,
+              `📐 File is ${fileLines} lines (>${maxFileLines}). Consider splitting into smaller modules.`,
             );
           }
         }
